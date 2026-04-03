@@ -21,3 +21,5 @@ EXPOSE 5000
 
 # Run the app
 CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT app.app:app"]
+
+
