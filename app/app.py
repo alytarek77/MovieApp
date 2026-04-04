@@ -1,35 +1,31 @@
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import os
-from flask import Flask
+from flask import Flask, request, jsonify, render_template
 import requests
-from flask import request, jsonify, render_template
+import os
 
 load_dotenv()
 
 app = Flask(__name__)
 
-@app.route("/")
-def home():
-    return "App is running"
+# MongoDB
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client[os.getenv("DB_NAME")]
+watchlist_collection = db["watchlist"]
+
+# TMDB
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+TMDB_BASE = "https://api.themoviedb.org/3"
+
 
 @app.route("/health")
 def health():
-    return {"status": "ok"}, 200
+    try:
+        client.admin.command("ping")
+        return jsonify({"status": "ok", "db": "connected"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "db": str(e)}), 500
 
-
-#MongoDB connection 
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client[os.getenv("DB_NAME")]
-movies_collection = db["movies"]
-
-@app.route("/test-db")
-def test_db():
-    client.admin.command("ping")
-    return {"status": "Database connected"}, 200
-
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
-TMDB_BASE = "https://api.themoviedb.org/3"
 
 @app.route("/")
 def home():
@@ -43,3 +39,14 @@ def home():
         if res.status_code == 200:
             movies = res.json().get("results", [])
     return render_template("index.html", movies=movies, query=query)
+
+
+@app.route("/movie/<int:movie_id>")
+def movie_details(movie_id):
+    res = requests.get(f"{TMDB_BASE}/movie/{movie_id}", params={
+        "api_key": TMDB_API_KEY
+    })
+    if res.status_code == 404:
+        return jsonify({"error": "Movie not found"}), 404
+    movie = res.json()
+    return render_template("movie.html", movie=movie)
