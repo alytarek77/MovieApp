@@ -6,7 +6,9 @@ import os
 
 load_dotenv()
 
-app = Flask(__name__)
+app = Flask(__name__, 
+            template_folder='../templates',
+            static_folder='../static')
 
 # MongoDB
 client = MongoClient(os.getenv("MONGO_URI"))
@@ -85,4 +87,7 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return jsonify({"error": "Internal server error"}), 500
+
+if __name__ == "__main__":
+    app.run(debug=True)
 
