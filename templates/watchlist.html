@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Watchlist — MovieApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">🎬 MovieApp</a>
+        <a href="/watchlist" class="nav-link">My Watchlist</a>
+    </nav>
+
+    <div class="container">
+        <h1 class="page-title">My Watchlist</h1>
+        <div id="watchlist-grid" class="movies-grid">
+            <p class="loading">Loading...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        async function loadWatchlist() {
+            const res = await fetch('/watchlist');
+            const movies = await res.json();
+            const grid = document.getElementById('watchlist-grid');
+            if (movies.length === 0) {
+                grid.innerHTML = '<p class="no-results">Your watchlist is empty.</p>';
+                return;
+            }
+            grid.innerHTML = movies.map(movie => `
+                <div class="movie-card">
+                    ${movie.poster_path
+                        ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">`
+                        : `<div class="no-poster">No Image</div>`}
+                    <div class="movie-info">
+                        <h3>${movie.title}</h3>
+                        <button class="remove-btn" onclick="removeFromWatchlist(${movie.tmdb_id})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        loadWatchlist();
+    </script>
+</body>
+</html>
