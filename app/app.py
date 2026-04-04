@@ -76,3 +76,13 @@ def remove_from_watchlist(tmdb_id):
     if result.deleted_count == 0:
         return jsonify({"error": "Movie not found in watchlist"}), 404
     return jsonify({"message": "Movie removed from watchlist"}), 200
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"error": "Not found"}), 404
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": "Internal server error"}), 500
+
