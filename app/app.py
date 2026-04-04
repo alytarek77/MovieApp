@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 from flask import Flask
+import requests
 
 load_dotenv()
 
@@ -25,3 +26,6 @@ movies_collection = db["movies"]
 def test_db():
     client.admin.command("ping")
     return {"status": "Database connected"}, 200
+
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+TMDB_BASE = "https://api.themoviedb.org/3"
