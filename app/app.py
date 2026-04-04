@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 from flask import Flask
 import requests
+from flask import request, jsonify, render_template
 
 load_dotenv()
 
@@ -29,3 +30,16 @@ def test_db():
 
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 TMDB_BASE = "https://api.themoviedb.org/3"
+
+@app.route("/")
+def home():
+    query = request.args.get("q", "")
+    movies = []
+    if query:
+        res = requests.get(f"{TMDB_BASE}/search/movie", params={
+            "api_key": TMDB_API_KEY,
+            "query": query
+        })
+        if res.status_code == 200:
+            movies = res.json().get("results", [])
+    return render_template("index.html", movies=movies, query=query)
