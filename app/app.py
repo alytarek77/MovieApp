@@ -51,6 +51,13 @@ def movie_details(movie_id):
     movie = res.json()
     return render_template("movie.html", movie=movie)
 
+
+@app.route("/watchlist", methods=["GET"])
+def get_watchlist():
+    movies = list(watchlist_collection.find({}, {"_id": 0}))
+    return jsonify(movies), 200
+
+
 @app.route("/watchlist", methods=["POST"])
 def add_to_watchlist():
     data = request.get_json()
