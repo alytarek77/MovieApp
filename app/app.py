@@ -68,3 +68,11 @@ def add_to_watchlist():
         return jsonify({"error": "Movie already in watchlist"}), 409
     watchlist_collection.insert_one(data)
     return jsonify({"message": "Movie added to watchlist"}), 201
+
+
+@app.route("/watchlist/<int:tmdb_id>", methods=["DELETE"])
+def remove_from_watchlist(tmdb_id):
+    result = watchlist_collection.delete_one({"tmdb_id": tmdb_id})
+    if result.deleted_count == 0:
+        return jsonify({"error": "Movie not found in watchlist"}), 404
+    return jsonify({"message": "Movie removed from watchlist"}), 200
