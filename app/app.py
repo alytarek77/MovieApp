@@ -50,3 +50,14 @@ def movie_details(movie_id):
         return jsonify({"error": "Movie not found"}), 404
     movie = res.json()
     return render_template("movie.html", movie=movie)
+
+@app.route("/watchlist", methods=["POST"])
+def add_to_watchlist():
+    data = request.get_json()
+    if not data or not data.get("tmdb_id") or not data.get("title"):
+        return jsonify({"error": "tmdb_id and title are required"}), 400
+    existing = watchlist_collection.find_one({"tmdb_id": data["tmdb_id"]})
+    if existing:
+        return jsonify({"error": "Movie already in watchlist"}), 409
+    watchlist_collection.insert_one(data)
+    return jsonify({"message": "Movie added to watchlist"}), 201
