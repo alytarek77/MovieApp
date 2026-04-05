@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 import requests
 import os
+import google.generativeai as genai
+
 
 load_dotenv()
 
@@ -88,6 +90,33 @@ def not_found(e):
 def server_error(e):
     return jsonify({"error": "Internal server error"}), 500
 
+<<<<<<< HEAD
 if __name__ == "__main__":
     app.run(debug=True)
 
+=======
+import google.generativeai as genai
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_model = genai.GenerativeModel("gemini-2.0-flash")
+
+@app.route("/recommend", methods=["POST"])
+def recommend():
+    data = request.get_json()
+    mood = data.get("mood", "")
+    genre = data.get("genre", "")
+    if not mood and not genre:
+        return jsonify({"error": "mood or genre is required"}), 400
+    prompt = f"Recommend one movie for someone feeling {mood} who likes {genre}. Reply with just the title and a one-sentence reason."
+    try:
+        response = gemini_model.generate_content(prompt)
+        return jsonify({"recommendation": response.text}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
+
+>>>>>>> feature/backend-routes
