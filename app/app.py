@@ -6,7 +6,7 @@ import os
 import google.generativeai as genai
 
 
-load_dotenv()
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__, 
             template_folder='../templates',
@@ -90,12 +90,10 @@ def not_found(e):
 def server_error(e):
     return jsonify({"error": "Internal server error"}), 500
 
-<<<<<<< HEAD
-if __name__ == "__main__":
-    app.run(debug=True)
 
-=======
-import google.generativeai as genai
+@app.route("/watchlist/view")
+def watchlist_page():
+    return render_template("watchlist.html")
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 gemini_model = genai.GenerativeModel("gemini-2.0-flash")
@@ -113,10 +111,11 @@ def recommend():
         return jsonify({"recommendation": response.text}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+
 
 
 if __name__ == "__main__":
     app.run(debug=True)
 
-
->>>>>>> feature/backend-routes
