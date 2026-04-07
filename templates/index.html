@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">🎬 MovieApp</a>
+        <a href="/watchlist" class="nav-link">My Watchlist</a>
+    </nav>
+
+    <div class="hero">
+        <h1>Find your next favourite film</h1>
+        <form action="/" method="GET" class="search-form">
+            <input type="text" name="q" placeholder="Search movies..." value="{{ query }}" class="search-input">
+            <button type="submit" class="search-btn">Search</button>
+        </form>
+    </div>
+
+    <div class="container">
+        {% if movies %}
+        <div class="movies-grid">
+            {% for movie in movies %}
+            <a href="/movie/{{ movie.id }}" class="movie-card">
+                {% if movie.poster_path %}
+                <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}">
+                {% else %}
+                <div class="no-poster">No Image</div>
+                {% endif %}
+                <div class="movie-info">
+                    <h3>{{ movie.title }}</h3>
+                    <span class="rating">⭐ {{ movie.vote_average | round(1) }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% elif query %}
+        <p class="no-results">No results found for "{{ query }}"</p>
+        {% endif %}
+
+        <div class="ai-section">
+            <h2>Not sure what to watch?</h2>
+            <div class="ai-form">
+                <input type="text" id="mood" placeholder="Your mood (e.g. sad, excited)" class="search-input">
+                <input type="text" id="genre" placeholder="Genre (e.g. thriller, comedy)" class="search-input">
+                <button onclick="getRecommendation()" class="search-btn">Get AI Recommendation</button>
+            </div>
+            <div id="recommendation" class="recommendation"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

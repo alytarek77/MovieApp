@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Watchlist — MovieApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">🎬 MovieApp</a>
+        <a href="/watchlist" class="nav-link">My Watchlist</a>
+    </nav>
+
+    <div class="hero">
+        <h1>My Watchlist</h1>
+        <p style="color: rgba(255,255,255,0.7); margin-top: 10px;">Movies you're planning to see.</p>
+    </div>
+
+    <div class="container">
+        <div id="watchlist-grid" class="movies-grid">
+            <p class="loading">Loading your collection...</p>
+        </div>
+    </div>
+
+    <script>
+        async function loadWatchlist() {
+            try {
+                // Hits your Python /api/watchlist route
+                const res = await fetch('/api/watchlist');
+                const movies = await res.json();
+                const grid = document.getElementById('watchlist-grid');
+                
+                if (movies.length === 0) {
+                    grid.innerHTML = '<p class="no-results">Your watchlist is empty. <a href="/" style="color: var(--accent);">Find some movies!</a></p>';
+                    return;
+                }
+
+                grid.innerHTML = movies.map(movie => `
+                    <div class="movie-card" id="card-${movie.tmdb_id}">
+                        <a href="/movie/${movie.tmdb_id}" style="text-decoration: none; color: inherit;">
+                            ${movie.poster_path 
+                                ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">`
+                                : `<div class="no-poster">No Image</div>`}
+                            <div class="movie-info">
+                                <h3>${movie.title}</h3>
+                            </div>
+                        </a>
+                        <button class="search-btn" 
+                                onclick="handleRemove(${movie.tmdb_id})" 
+                                style="background: #ff4757; margin: 10px; width: calc(100% - 20px);">
+                            Remove
+                        </button>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('watchlist-grid').innerHTML = '<p class="no-results">Error loading watchlist.</p>';
+            }
+        }
+
+        async function handleRemove(tmdbId) {
+            const card = document.getElementById(`card-${tmdbId}`);
+            card.style.opacity = '0.5';
+            
+            try {
+                const res = await fetch(`/api/watchlist/${tmdbId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    card.remove();
+                    const grid = document.getElementById('watchlist-grid');
+                    if (grid.children.length === 0) {
+                        grid.innerHTML = '<p class="no-results">Your watchlist is empty.</p>';
+                    }
+                }
+            } catch (err) {
+                alert("Could not remove movie.");
+                card.style.opacity = '1';
+            }
+        }
+
+        loadWatchlist();
+    </script>
+</body>
+</html>

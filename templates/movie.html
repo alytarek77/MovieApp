@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ movie.title }} — MovieApp</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="logo">🎬 MovieApp</a>
+        <a href="/watchlist" class="nav-link">My Watchlist</a>
+    </nav>
+
+    {% if movie.backdrop_path %}
+    <div class="backdrop" style="background-image: url('https://image.tmdb.org/t/p/w1280{{ movie.backdrop_path }}')"></div>
+    {% endif %}
+
+    <div class="container movie-detail">
+        <div class="movie-detail-card">
+            {% if movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}" alt="{{ movie.title }}" class="detail-poster">
+            {% endif %}
+            <div class="detail-info">
+                <h1>{{ movie.title }}</h1>
+                <p class="tagline">{{ movie.tagline }}</p>
+                <div class="meta">
+                    <span>⭐ {{ movie.vote_average | round(1) }}</span>
+                    <span>📅 {{ movie.release_date }}</span>
+                    <span>⏱ {{ movie.runtime }} min</span>
+                </div>
+                <p class="overview">{{ movie.overview }}</p>
+                <button class="search-btn" onclick="addToWatchlist({{ movie.id }}, '{{ movie.title }}', '{{ movie.poster_path }}')">
+                    + Add to Watchlist
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
