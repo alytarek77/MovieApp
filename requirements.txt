@@ -7,3 +7,4 @@ gunicorn==21.2.0
 requests
 google-generativeai
 flake8
+google-generativeai
