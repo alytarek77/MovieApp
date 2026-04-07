@@ -1,10 +1,12 @@
 // Add to Watchlist
 async function addToWatchlist(tmdbId, title, posterPath) {
-    const res = await fetch('/watchlist', {
+    // FIXED: Changed '/watchlist' to '/api/watchlist' to match your new Python route
+    const res = await fetch('/api/watchlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tmdb_id: tmdbId, title: title, poster_path: posterPath })
     });
+    
     const data = await res.json();
     if (res.ok) {
         alert(`${title} added to watchlist!`);
@@ -15,14 +17,16 @@ async function addToWatchlist(tmdbId, title, posterPath) {
 
 // Remove from Watchlist
 async function removeFromWatchlist(tmdbId) {
-    const res = await fetch(`/watchlist/${tmdbId}`, {
+    // FIXED: Pointing to the new API structure
+    const res = await fetch(`/api/watchlist/${tmdbId}`, {
         method: 'DELETE'
     });
-    const data = await res.json();
+    
     if (res.ok) {
         alert('Movie removed from watchlist');
         location.reload();
     } else {
+        const data = await res.json();
         alert(data.error || 'Failed to remove');
     }
 }
