@@ -13,34 +13,70 @@
         <a href="/watchlist" class="nav-link">My Watchlist</a>
     </nav>
 
+    <div class="hero">
+        <h1>My Watchlist</h1>
+        <p style="color: rgba(255,255,255,0.7); margin-top: 10px;">Movies you're planning to see.</p>
+    </div>
+
     <div class="container">
-        <h1 class="page-title">My Watchlist</h1>
         <div id="watchlist-grid" class="movies-grid">
-            <p class="loading">Loading...</p>
+            <p class="loading">Loading your collection...</p>
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
         async function loadWatchlist() {
-            const res = await fetch('/watchlist');
-            const movies = await res.json();
-            const grid = document.getElementById('watchlist-grid');
-            if (movies.length === 0) {
-                grid.innerHTML = '<p class="no-results">Your watchlist is empty.</p>';
-                return;
-            }
-            grid.innerHTML = movies.map(movie => `
-                <div class="movie-card">
-                    ${movie.poster_path
-                        ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">`
-                        : `<div class="no-poster">No Image</div>`}
-                    <div class="movie-info">
-                        <h3>${movie.title}</h3>
-                        <button class="remove-btn" onclick="removeFromWatchlist(${movie.tmdb_id})">Remove</button>
+            try {
+                // Hits your Python /api/watchlist route
+                const res = await fetch('/api/watchlist');
+                const movies = await res.json();
+                const grid = document.getElementById('watchlist-grid');
+                
+                if (movies.length === 0) {
+                    grid.innerHTML = '<p class="no-results">Your watchlist is empty. <a href="/" style="color: var(--accent);">Find some movies!</a></p>';
+                    return;
+                }
+
+                grid.innerHTML = movies.map(movie => `
+                    <div class="movie-card" id="card-${movie.tmdb_id}">
+                        <a href="/movie/${movie.tmdb_id}" style="text-decoration: none; color: inherit;">
+                            ${movie.poster_path 
+                                ? `<img src="https://image.tmdb.org/t/p/w500${movie.poster_path}" alt="${movie.title}">`
+                                : `<div class="no-poster">No Image</div>`}
+                            <div class="movie-info">
+                                <h3>${movie.title}</h3>
+                            </div>
+                        </a>
+                        <button class="search-btn" 
+                                onclick="handleRemove(${movie.tmdb_id})" 
+                                style="background: #ff4757; margin: 10px; width: calc(100% - 20px);">
+                            Remove
+                        </button>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                document.getElementById('watchlist-grid').innerHTML = '<p class="no-results">Error loading watchlist.</p>';
+            }
+        }
+
+        async function handleRemove(tmdbId) {
+            const card = document.getElementById(`card-${tmdbId}`);
+            card.style.opacity = '0.5';
+            
+            try {
+                const res = await fetch(`/api/watchlist/${tmdbId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    card.remove();
+                    const grid = document.getElementById('watchlist-grid');
+                    if (grid.children.length === 0) {
+                        grid.innerHTML = '<p class="no-results">Your watchlist is empty.</p>';
+                    }
+                }
+            } catch (err) {
+                alert("Could not remove movie.");
+                card.style.opacity = '1';
+            }
         }
 
         loadWatchlist();

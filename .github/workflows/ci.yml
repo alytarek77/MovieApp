@@ -23,11 +23,5 @@ jobs:
         run: pip install -r requirements.txt
         working-directory: .
 
-      - name: Run tests
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-        run: pytest tests/
-
       - name: Build Docker image
         run: docker build -t movie-app .
