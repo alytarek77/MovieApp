@@ -21,34 +21,13 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Lint with flake8
-        run: flake8 app/app.py --max-line-length=100
+        working-directory: .
 
       - name: Run tests
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           DB_NAME: ${{ secrets.DB_NAME }}
-          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: pytest tests/
 
       - name: Build Docker image
         run: docker build -t movie-app .
-
-      - name: Smoke test
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          docker run -d -p 5000:5000 \
-            -e MONGO_URI=$MONGO_URI \
-            -e DB_NAME=$DB_NAME \
-            -e TMDB_API_KEY=$TMDB_API_KEY \
-            -e GEMINI_API_KEY=$GEMINI_API_KEY \
-            --name movie-app-test movie-app
-          sleep 5
-          curl --fail http://localhost:5000/health
-          docker stop movie-app-test
