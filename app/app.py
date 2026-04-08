@@ -16,7 +16,7 @@ app = Flask(__name__,
 
 # MongoDB Connection
 # MongoDB Connection
-mongo_client = MongoClient(os.getenv("MONGO_URI"))
+mongo_client = MongoClient(os.getenv("MONGO_URI"), tls=True, tlsAllowInvalidCertificates=True)
 db = mongo_client[os.getenv("DB_NAME")]
 watchlist_collection = db["watchlist"]
 
