@@ -31,7 +31,7 @@
                     <span>⏱ {{ movie.runtime }} min</span>
                 </div>
                 <p class="overview">{{ movie.overview }}</p>
-                <button class="search-btn" onclick="addToWatchlist({{ movie.id }}, '{{ movie.title }}', '{{ movie.poster_path }}')">
+                <button class="search-btn" onclick="addToWatchlist({'{ movie.id }}', '{{ movie.title }}', '{{ movie.poster_path }}')">
                     + Add to Watchlist
                 </button>
             </div>
