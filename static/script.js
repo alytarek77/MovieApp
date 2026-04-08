@@ -1,22 +1,27 @@
-
-const API_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "";
+// This automatically detects if you are local or on Render
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5001" 
+    : ""; // Empty string means "use the current domain" (e.g., your-app.onrender.com)
 
 // Add to Watchlist
 async function addToWatchlist(tmdbId, title, posterPath) {
-    // FIXED: Changed '/watchlist' to '/api/watchlist' to match your new Python route
+    console.log("Sending data:", { tmdbId, title, posterPath }); // DEBUGGING
+
     const res = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tmdb_id: tmdbId, title: title, poster_path: posterPath })
+        body: JSON.stringify({ 
+            tmdb_id: tmdbId,    // Must match Python's data.get("tmdb_id")
+            title: title, 
+            poster_path: posterPath 
+        })
     });
     
     const data = await res.json();
     if (res.ok) {
         alert(`${title} added to watchlist!`);
     } else {
+        console.error("Server Error:", data);
         alert(data.error || 'Failed to add to watchlist');
     }
 }
