@@ -91,7 +91,7 @@ def remove_from_watchlist(tmdb_id):
         
     return jsonify({"message": "Movie removed from watchlist"}), 200
 
-# client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
