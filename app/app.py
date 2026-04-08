@@ -79,11 +79,17 @@ def add_to_watchlist():
 
 @app.route("/api/watchlist/<int:tmdb_id>", methods=["DELETE"])
 def remove_from_watchlist(tmdb_id):
+    # Try deleting as a Number first
     result = watchlist_collection.delete_one({"tmdb_id": tmdb_id})
+    
+    # If nothing was deleted, try deleting as a String
+    if result.deleted_count == 0:
+        result = watchlist_collection.delete_one({"tmdb_id": str(tmdb_id)})
+        
     if result.deleted_count == 0:
         return jsonify({"error": "Movie not found in watchlist"}), 404
+        
     return jsonify({"message": "Movie removed from watchlist"}), 200
-
 
 # client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
