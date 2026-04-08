@@ -1,9 +1,11 @@
-import google.generativeai as genai
+
 import requests
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
+from google import genai
+
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Load environment variables
@@ -13,8 +15,9 @@ app = Flask(__name__,
             static_folder='../static')
 
 # MongoDB Connection
-client = MongoClient(os.getenv("MONGO_URI"))
-db = client[os.getenv("DB_NAME")]
+# MongoDB Connection
+mongo_client = MongoClient(os.getenv("MONGO_URI"), tls=True, tlsAllowInvalidCertificates=True)
+db = mongo_client[os.getenv("DB_NAME")]
 watchlist_collection = db["watchlist"]
 
 # TMDB Configuration
@@ -86,47 +89,58 @@ def remove_from_watchlist(tmdb_id):
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
-    data = request.get_json()
-    mood = data.get("mood", "")
-    genre = data.get("genre", "")
+    data = request.get_json() or {}
+    mood = data.get("mood", "").strip()
+    genre = data.get("genre", "").strip()
 
     if not mood and not genre:
         return jsonify({"error": "Mood or genre is required"}), 400
 
     try:
         api_key = os.getenv("GEMINI_API_KEY")
-
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in .env")
+            return jsonify({"error": "GEMINI_API_KEY is not set in .env"}), 500
 
+        # Correct new SDK usage
         client = genai.Client(api_key=api_key)
 
-        prompt = f"Recommend one movie for someone feeling {mood} who likes {genre}. Reply with just the title and a one-sentence reason."
+        prompt = f"Recommend one movie for someone feeling {mood} who likes {genre} genre. "
+        prompt += "Reply with ONLY the movie title on the first line, followed by a one-sentence reason."
 
+        # Recommended way: contents as list
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
+        model="gemini-2.0-flash", 
+        contents=[prompt]
         )
 
-        return jsonify({"recommendation": response.text}), 200
+        recommendation_text = response.text.strip() if response.text else ""
+
+        return jsonify({
+            "recommendation": recommendation_text
+        }), 200
 
     except Exception as e:
-        error_msg = str(e)
+        error_msg = str(e).lower()
 
-        if "429" in error_msg or "rate_limit" in error_msg.lower():
+        if "429" in error_msg or "rate limit" in error_msg or "quota" in error_msg:
             return jsonify({
-                "error": "Gemini is currently at capacity. Please wait a few seconds and try again!"
+                "error": "Gemini is currently at capacity (rate limit). Please wait a few seconds and try again."
             }), 429
 
-        print(f"Gemini Error: {error_msg}")
-        return jsonify(
-            {"error": "AI recommendation is temporarily unavailable."}), 500
+        if "404" in error_msg or "not found" in error_msg or "model" in error_msg:
+            return jsonify({
+                "error": "Model not found. Try changing the model name in code."
+            }), 400
 
+        print(f"Gemini API Error: {str(e)}")   # Keep for debugging
+        return jsonify({
+            "error": "AI recommendation is temporarily unavailable. Please try again later."
+        }), 500
 
 @app.route("/health")
 def health():
     try:
-        client.admin.command("ping")
+        mongo_client.admin.command("ping")
         return jsonify({"status": "ok", "db": "connected"}), 200
     except Exception as e:
         return jsonify({"status": "error", "db": str(e)}), 500
