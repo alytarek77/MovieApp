@@ -1,7 +1,13 @@
+
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "";
+
 // Add to Watchlist
 async function addToWatchlist(tmdbId, title, posterPath) {
     // FIXED: Changed '/watchlist' to '/api/watchlist' to match your new Python route
-    const res = await fetch('/api/watchlist', {
+    const res = await fetch(`${API_URL}/api/watchlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tmdb_id: tmdbId, title: title, poster_path: posterPath })
@@ -18,7 +24,7 @@ async function addToWatchlist(tmdbId, title, posterPath) {
 // Remove from Watchlist
 async function removeFromWatchlist(tmdbId) {
     // FIXED: Pointing to the new API structure
-    const res = await fetch(`/api/watchlist/${tmdbId}`, {
+    const res = await fetch(`${API_URL}/api/watchlist/${tmdbId}`, {
         method: 'DELETE'
     });
     
@@ -45,7 +51,7 @@ async function getRecommendation() {
     box.style.display = 'block';
     box.innerHTML = 'Getting recommendation...';
 
-    const res = await fetch('/recommend', {
+    const res = await fetch(`${API_URL}/recommend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mood, genre })
