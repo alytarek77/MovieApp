@@ -27,7 +27,7 @@ jobs:
           context: .
           push: ${{ github.event_name == 'push' }}
           tags: |
-            alytarek77/my-new-app:latest
+            alytarek77/my-new-app:dff78d1d0e3253ffa6d799f8d13521a03aadf453
             alytarek77/my-new-app:${{ github.sha }}
 
   deploy:
