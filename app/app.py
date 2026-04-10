@@ -6,6 +6,9 @@ import os
 from dotenv import load_dotenv
 from google import genai
 
+import json
+from ai import generate_recommendaton_ai
+
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Load environment variables
@@ -92,56 +95,24 @@ def remove_from_watchlist(tmdb_id):
     return jsonify({"message": "Movie removed from watchlist"}), 200
 
 
-
-@app.route("/recommend", methods=["POST"])
+@app.route('/recommend', methods=['POST'])
 def recommend():
     data = request.get_json() or {}
-    mood = data.get("mood", "").strip()
-    genre = data.get("genre", "").strip()
+    mood = data.get('mood')
+    genre = data.get('genre')
 
-    if not mood and not genre:
-        return jsonify({"error": "Mood or genre is required"}), 400
+    if not mood or not genre:
+        return jsonify({"message": "Mood and Genre are required"}), 400
 
     try:
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            return jsonify({"error": "GEMINI_API_KEY is not set in .env"}), 500
-
-        # Correct new SDK usage
-        client = genai.Client(api_key=api_key)
-
-        prompt = f"Recommend one movie for someone feeling {mood} who likes {genre} genre. "
-        prompt += "Reply with ONLY the movie title on the first line, followed by a one-sentence reason."
-
-        # Recommended way: contents as list
-        response = client.models.generate_content(
-        model="gemini-2.0-flash", 
-        contents=[prompt]
-        )
-
-        recommendation_text = response.text.strip() if response.text else ""
-
-        return jsonify({
-            "recommendation": recommendation_text
-        }), 200
+        ai_response = generate_recommendaton_ai(mood, genre)
+        print(f"AI RAW RESPONSE: {ai_response}") # Check what the AI actually said
+        movies = json.loads(ai_response)
+        return jsonify(movies), 200
 
     except Exception as e:
-        error_msg = str(e).lower()
-
-        if "429" in error_msg or "rate limit" in error_msg or "quota" in error_msg:
-            return jsonify({
-                "error": "Gemini is currently at capacity (rate limit). Please wait a few seconds and try again."
-            }), 429
-
-        if "404" in error_msg or "not found" in error_msg or "model" in error_msg:
-            return jsonify({
-                "error": "Model not found. Try changing the model name in code."
-            }), 400
-
-        print(f"Gemini API Error: {str(e)}")   # Keep for debugging
-        return jsonify({
-            "error": "AI recommendation is temporarily unavailable. Please try again later."
-        }), 500
+        print("!! CRASH ERROR:", e) # This will show the real error in your terminal
+        return jsonify({"message": "Error", "error": str(e)}), 500
 
 @app.route("/health")
 def health():
