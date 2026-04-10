@@ -19,7 +19,9 @@ ENV PORT=5000
 # Expose port
 EXPOSE 5000
 
+ENV PYTHONPATH="/app"
+
 # Run the app
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT app.app:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:$PORT --chdir app app:app"]
 
 
