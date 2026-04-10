@@ -42,30 +42,35 @@ async function removeFromWatchlist(tmdbId) {
     }
 }
 
-// AI Recommendation
 async function getRecommendation() {
     const mood = document.getElementById('mood').value;
     const genre = document.getElementById('genre').value;
     const box = document.getElementById('recommendation');
 
-    if (!mood && !genre) {
-        alert('Please enter a mood or genre');
+    if (!mood || !genre) {
+        alert('Please enter both mood and genre');
         return;
     }
 
     box.style.display = 'block';
     box.innerHTML = 'Getting recommendation...';
 
-    const res = await fetch(`${API_URL}/recommend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mood, genre })
-    });
+    try {
+        const res = await fetch(`/recommend`, { // Ensure API_URL is defined or use relative path
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mood, genre })
+        });
 
-    const data = await res.json();
-    if (res.ok) {
-        box.innerHTML = `🎬 ${data.recommendation}`;
-    } else {
-        box.innerHTML = `Error: ${data.error}`;
+        const data = await res.json();
+        
+        if (res.ok) {
+            // This matches the "recommendation" key we told the AI to use
+            box.innerHTML = `🎬 ${data.recommendation}`;
+        } else {
+            box.innerHTML = `Error: ${data.message}`;
+        }
+    } catch (err) {
+        box.innerHTML = "System error. Is the server running?";
     }
 }
