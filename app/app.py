@@ -4,7 +4,6 @@ from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 import os
 from dotenv import load_dotenv
-from google import genai
 
 import json
 from app.ai import generate_recommendaton_ai
@@ -82,10 +81,9 @@ def add_to_watchlist():
 
 @app.route("/api/watchlist/<int:tmdb_id>", methods=["DELETE"])
 def remove_from_watchlist(tmdb_id):
-    # Try deleting as a Number first
+   
     result = watchlist_collection.delete_one({"tmdb_id": tmdb_id})
-    
-    # If nothing was deleted, try deleting as a String
+ 
     if result.deleted_count == 0:
         result = watchlist_collection.delete_one({"tmdb_id": str(tmdb_id)})
         
@@ -106,12 +104,12 @@ def recommend():
 
     try:
         ai_response = generate_recommendaton_ai(mood, genre)
-        print(f"AI RAW RESPONSE: {ai_response}") # Check what the AI actually said
+        print(f"AI RAW RESPONSE: {ai_response}") 
         movies = json.loads(ai_response)
         return jsonify(movies), 200
 
     except Exception as e:
-        print("!! CRASH ERROR:", e) # This will show the real error in your terminal
+        print("!! CRASH ERROR:", e) 
         return jsonify({"message": "Error", "error": str(e)}), 500
 
 @app.route("/health")
