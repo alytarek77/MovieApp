@@ -106,11 +106,7 @@ def recommend():
 
 @app.route("/health")
 def health():
-    try:
-        mongo_client.admin.command("ping")
-        return jsonify({"status": "ok", "db": "connected"}), 200
-    except Exception as e:
-        return jsonify({"status": "error", "db": str(e)}), 500
+    return jsonify({"status": "ok"}), 200
 
 
 @app.errorhandler(404)
