@@ -7,7 +7,33 @@ on:
     branches: [ main ]
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: flake8 app/app.py --max-line-length=100
+
+      - name: Run tests
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: pytest tests/
+
   build-test-push:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,17 +48,28 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push (Hammer Method)
+      - name: Build and Push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # Forces a single image type that Render understands
           platforms: linux/amd64
           tags: |
             alytarek77/my-new-app:latest
             alytarek77/my-new-app:v1
             alytarek77/my-new-app:${{ github.sha }}
+
+      - name: Smoke test
+        run: |
+          docker run -d -p 5000:5000 \
+            -e MONGO_URI=${{ secrets.MONGO_URI }} \
+            -e DB_NAME=${{ secrets.DB_NAME }} \
+            -e TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
+            -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+            --name movie-app-test alytarek77/my-new-app:latest
+          sleep 5
+          curl --fail http://localhost:5000/health
+          docker stop movie-app-test
 
   deploy:
     needs: build-test-push
