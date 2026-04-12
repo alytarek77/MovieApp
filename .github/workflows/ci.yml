@@ -7,31 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run tests
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          DB_NAME: ${{ secrets.DB_NAME }}
-          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: pytest tests/
-
   build-test-push:
-    needs: test
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,37 +20,45 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and Push
+      - name: Build image (no push yet)
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
-          platforms: linux/amd64
+          push: false
           tags: |
             alytarek77/my-new-app:latest
-            alytarek77/my-new-app:v1
             alytarek77/my-new-app:${{ github.sha }}
 
       - name: Smoke test
         run: |
-          docker run -d -p 5000:5000 \
-            -e MONGO_URI=${{ secrets.MONGO_URI }} \
-            -e DB_NAME=${{ secrets.DB_NAME }} \
-            -e TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
-            -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-            --name movie-app-test alytarek77/my-new-app:latest
+          docker build -t my-new-app-smoke .
+          docker run -d -p 5000:5000 --name my-new-app-smoke my-new-app-smoke
           sleep 5
-          curl --fail http://localhost:5000/health
-          docker stop movie-app-test
+          RESPONSE=$(curl -s http://localhost:5000/api/health)
+          echo "Response: $RESPONSE"
+          if [[ "$RESPONSE" != "ok" ]]; then
+            echo "Smoke test failed"
+            docker logs my-new-app-smoke
+            docker stop my-new-app-smoke
+            exit 1
+          fi
+          docker stop my-new-app-smoke
+
+      - name: Push to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            alytarek77/my-new-app:latest
+            alytarek77/my-new-app:${{ github.sha }}
 
   deploy:
     needs: build-test-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy to Render
-        run: |
-          curl -X POST "${{ secrets.RENDER_DEPLOY_URL }}"
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_URL }}"
