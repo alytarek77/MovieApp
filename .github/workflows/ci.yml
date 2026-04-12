@@ -20,12 +20,43 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push image
-        # This will build the image. It only pushes if the event is a 'push' to main.
+      - name: Build image (no push yet)
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name == 'push' }}
+          push: false
+          tags: |
+            alytarek77/my-new-app:latest
+            alytarek77/my-new-app:${{ github.sha }}
+
+      - name: Smoke test
+        run: |
+          docker build -t my-new-app-smoke .
+          docker run -d -p 5000:5000 \
+            -e MONGO_URI='${{ secrets.MONGO_URI }}' \
+            -e DB_NAME='${{ secrets.DB_NAME }}' \
+            -e TMDB_API_KEY='${{ secrets.TMDB_API_KEY }}' \
+            -e GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' \
+            --name my-new-app-smoke my-new-app-smoke
+          sleep 10
+          docker logs my-new-app-smoke
+          RESPONSE=$(curl -s http://localhost:5000/health)
+          echo "Response: $RESPONSE"
+          if [[ "$RESPONSE" != *"ok"* ]]; then
+            echo "Smoke test failed"
+            docker logs my-new-app-smoke
+            docker stop my-new-app-smoke
+            exit 1
+          fi
+          docker stop my-new-app-smoke
+          docker rm my-new-app-smoke
+
+      - name: Push to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
           tags: |
             alytarek77/my-new-app:latest
             alytarek77/my-new-app:${{ github.sha }}

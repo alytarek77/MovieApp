@@ -7,15 +7,13 @@ from pymongo import MongoClient
 
 from ai import generate_recommendaton_ai
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-# Load environment variables
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 app = Flask(__name__,
             template_folder='../templates',
             static_folder='../static')
 
-# MongoDB Connection
 # MongoDB Connection
 mongo_client = MongoClient(os.getenv("MONGO_URI"), tls=True, tlsAllowInvalidCertificates=True)
 db = mongo_client[os.getenv("DB_NAME")]
@@ -53,13 +51,11 @@ def movie_details(movie_id):
 
 @app.route("/watchlist")
 def watchlist_page():
-    """This route serves the beautiful HTML grid."""
     return render_template("watchlist.html")
 
 
 @app.route("/api/watchlist", methods=["GET"])
 def get_watchlist_data():
-    """This is the 'Brain' that the JavaScript calls to get movie data."""
     movies = list(watchlist_collection.find({}, {"_id": 0}))
     return jsonify(movies), 200
 
@@ -80,16 +76,14 @@ def add_to_watchlist():
 
 @app.route("/api/watchlist/<int:tmdb_id>", methods=["DELETE"])
 def remove_from_watchlist(tmdb_id):
-    # Try deleting as a Number first
     result = watchlist_collection.delete_one({"tmdb_id": tmdb_id})
-    
-    # If nothing was deleted, try deleting as a String
+
     if result.deleted_count == 0:
         result = watchlist_collection.delete_one({"tmdb_id": str(tmdb_id)})
-        
+
     if result.deleted_count == 0:
         return jsonify({"error": "Movie not found in watchlist"}), 404
-        
+
     return jsonify({"message": "Movie removed from watchlist"}), 200
 
 
@@ -104,13 +98,12 @@ def recommend():
 
     try:
         ai_response = generate_recommendaton_ai(mood, genre)
-        print(f"AI RAW RESPONSE: {ai_response}") # Check what the AI actually said
         movies = json.loads(ai_response)
         return jsonify(movies), 200
 
     except Exception as e:
-        print("!! CRASH ERROR:", e) # This will show the real error in your terminal
         return jsonify({"message": "Error", "error": str(e)}), 500
+
 
 @app.route("/health")
 def health():
@@ -125,6 +118,7 @@ def not_found(e):
 @app.errorhandler(500)
 def server_error(e):
     return jsonify({"error": "Internal server error"}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
