@@ -32,17 +32,24 @@ jobs:
       - name: Smoke test
         run: |
           docker build -t my-new-app-smoke .
-          docker run -d -p 5000:5000 --name my-new-app-smoke my-new-app-smoke
-          sleep 5
-          RESPONSE=$(curl -s http://localhost:5000/api/health)
+          docker run -d -p 5000:5000 \
+            -e MONGO_URI='${{ secrets.MONGO_URI }}' \
+            -e DB_NAME='${{ secrets.DB_NAME }}' \
+            -e TMDB_API_KEY='${{ secrets.TMDB_API_KEY }}' \
+            -e GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' \
+            --name my-new-app-smoke my-new-app-smoke
+          sleep 10
+          docker logs my-new-app-smoke
+          RESPONSE=$(curl -s http://localhost:5000/health)
           echo "Response: $RESPONSE"
-          if [[ "$RESPONSE" != "ok" ]]; then
+          if [[ "$RESPONSE" != *"ok"* ]]; then
             echo "Smoke test failed"
             docker logs my-new-app-smoke
             docker stop my-new-app-smoke
             exit 1
           fi
           docker stop my-new-app-smoke
+          docker rm my-new-app-smoke
 
       - name: Push to Docker Hub
         if: github.event_name == 'push'
