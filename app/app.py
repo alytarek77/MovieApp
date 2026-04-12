@@ -1,12 +1,10 @@
-
+import json
+import os
 import requests
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
-import os
-from dotenv import load_dotenv
-from google import genai
 
-import json
 from ai import generate_recommendaton_ai
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
