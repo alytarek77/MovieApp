@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from pymongo import MongoClient
 
-from ai import generate_recommendaton_ai
-
+from app.ai import generate_recommendaton_ai
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
@@ -15,7 +14,11 @@ app = Flask(__name__,
             static_folder='../static')
 
 # MongoDB Connection
-mongo_client = MongoClient(os.getenv("MONGO_URI"), tls=True, tlsAllowInvalidCertificates=True)
+mongo_client = MongoClient(
+    os.getenv("MONGO_URI"),
+    tls=True,
+    tlsAllowInvalidCertificates=True
+)
 db = mongo_client[os.getenv("DB_NAME")]
 watchlist_collection = db["watchlist"]
 
@@ -107,7 +110,11 @@ def recommend():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok"}), 200
+    try:
+        mongo_client.admin.command("ping")
+        return jsonify({"status": "ok", "db": "connected"}), 200
+    except Exception:
+        return jsonify({"status": "ok", "db": "disconnected"}), 200
 
 
 @app.errorhandler(404)
